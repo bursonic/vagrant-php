@@ -1,0 +1,46 @@
+server {
+	listen 80;
+
+	root "/var/www/tao/package-tao";
+
+	server_name tao.loc;
+
+	access_log /var/log/nginx/tao-access.log;
+
+	error_log  /var/log/nginx/tao-error.log;
+
+	index index.php, index.html;
+
+	location ~ ^/([^//]*)/(views|locales)/. {
+	}
+
+	location /tao/install {
+	}
+
+	location /parc-itemrunner {
+        }
+
+	location /tao/getFile.php {
+    		rewrite  ^(.*)$ /tao/getFile.php last;
+	}
+
+	location / {
+		try_files $uri @php;
+	}
+
+	location @php{
+		rewrite ^(.*)$ /index.php;
+	}
+
+	location ~ \.php$ {
+		fastcgi_pass unix:/var/run/php5-fpm.sock;
+
+		fastcgi_index index.php;
+
+		fastcgi_param SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+
+		include fastcgi_params;
+		fastcgi_param ENVIRONMENT "development";
+	}
+
+}

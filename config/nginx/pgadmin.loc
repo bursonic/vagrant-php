@@ -1,0 +1,27 @@
+server {
+	listen 80;
+
+	root /usr/share/phppgadmin;
+	server_name pgadmin.loc;
+
+	access_log pgadmin-access.log;
+	error_log  pgadmin-error.log;
+
+	index index.php;
+
+	location / {
+		try_files $uri @php;
+	}
+
+	location @php{
+		rewrite ^(.*)$ /index.php;
+	}
+
+	location ~ \.php$ {
+		fastcgi_pass unix:/var/run/php5-fpm.sock;
+		fastcgi_index index.php;
+		fastcgi_param SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+
+		include fastcgi_params;
+	}
+}
