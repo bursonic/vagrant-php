@@ -64,20 +64,25 @@ Vagrant.configure(2) do |config|
   # Enable provisioning with a shell script. Additional provisioners such as
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
-  config.vm.provision "file", source: "config/database/init_pg.sql", destination: "/tmp/config/postgre/init_pg.sql"
+  config.vm.provision "file", source: "config/database/init_pg_tao.sql", destination: "/tmp/config/postgre/init_pg_tao.sql"
   config.vm.provision "file", source: "config/nginx/tao.loc", destination: "/tmp/config/nginx/sites/tao.loc"
   config.vm.provision "file", source: "config/php/fpm-php.ini", destination: "/tmp/config/php/fpm-php.ini"
   config.vm.provision "file", source: "config/php/cli-php.ini", destination: "/tmp/config/php/cli-php.ini"
   config.vm.provision "file", source: "config/php/modules/xdebug.ini", destination: "/tmp/config/php/modules/xdebug.ini"
+  config.vm.provision "file", source: "config/postgre/pg_hba.conf", destination: "/tmp/config/postgre/pg_hba.conf"
+  config.vm.provision "file", source: "config/postgre/postgresql.conf", destination: "/tmp/config/postgre/postgresql.conf"
 
   config.vm.provision "shell", inline: <<-SHELL
   	sudo apt-get update
 	sudo apt-get install -y git
 	sudo apt-get install -y nginx
+	# install php
 	sudo apt-get install -y php5 php5-fpm php5-cli
     sudo apt-get install -y php5-gd php5-pgsql php5-tidy php5-curl php-xml-parser
 	sudo apt-get install -y php5-xdebug
+	# install postgre
 	sudo apt-get install -y postgresql postgresql-client
+	# install grunt, sass
 	sudo apt-add-repository -y ppa:chris-lea/node.js
     sudo apt-get update
     sudo apt-get install -y nodejs
@@ -85,17 +90,26 @@ Vagrant.configure(2) do |config|
     sudo gem install sass
     sudo npm install -g grunt-cli
 
+    # configure nginx hosts
 	sudo cp /tmp/config/nginx/sites/tao.loc /etc/nginx/sites-available/
 	sudo ln -s /etc/nginx/sites-available/tao.loc /etc/nginx/sites-enabled/tao.loc
-	
+
+	# configure php settings modules
 	sudo cp "/tmp/config/php/fpm-php.ini" /etc/php5/fpm/php.ini
 	sudo cp "/tmp/config/php/cli-php.ini" /etc/php5/cli/php.ini
 	sudo cp /tmp/config/php/modules/xdebug.ini /etc/php5/mods-available/xdebug.ini
 
+    # configure postgres to accept remote connections
+    sudo cp "/tmp/config/postgre/pg_hba.conf" "/etc/postgresql/9.3/main/pg_hba.conf"
+    sudo cp "/tmp/config/postgre/postgresql.conf" ""/etc/postgresql/9.3/main/postgresql.conf"
+
+    # reload services
 	sudo service nginx reload
 	sudo service php5-fpm reload
-	
-	cat /tmp/config/postgre/init_pg.sql | sudo -u postgres psql
+	sudo service postgresql reload
+
+    # run db/user init scripts
+	cat /tmp/config/postgre/init_pg_tao.sql | sudo -u postgres psql
   SHELL
 
 end
